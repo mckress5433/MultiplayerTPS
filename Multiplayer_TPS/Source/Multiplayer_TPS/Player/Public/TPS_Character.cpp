@@ -39,6 +39,7 @@ void ATPS_Character::MoveRight(float _value)
 	AddMovementInput(GetActorRightVector()*_value);
 }
 
+
 void ATPS_Character::CrouchInputPressed()
 {
 	if (bReadyToCrouch) {
@@ -72,10 +73,13 @@ void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	//Movement Input
 	PlayerInputComponent->BindAxis("Move_X", this, &ATPS_Character::MoveForward);
 	PlayerInputComponent->BindAxis("Move_Y", this, &ATPS_Character::MoveRight);
-	//Camera Input
+	//Jump
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ATPS_Character::Jump);
+	
+	//Camera Rotation
 	PlayerInputComponent->BindAxis("LookUp", this, &ATPS_Character::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookRight", this, &ATPS_Character::AddControllerYawInput);
-	
+	//Crouch
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPS_Character::CrouchInputPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPS_Character::CrouchInputReleased);
 }

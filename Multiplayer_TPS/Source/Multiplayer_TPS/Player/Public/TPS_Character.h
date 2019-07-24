@@ -34,7 +34,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	//Movement Functions
+	//Character Control Functions
 	void MoveForward(float _value);
 	void MoveRight(float _value);
 
