@@ -63,6 +63,27 @@ void ATPS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (GetVelocity().Size() > 0.0f) {
+		bUseControllerRotationYaw = true;
+	}
+	else {
+		bUseControllerRotationYaw = false;
+
+		FRotator actorRot = GetActorRotation();
+		FRotator controlRot = GetControlRotation();
+		FRotator deltaRot = actorRot - controlRot;
+		deltaRot.Normalize();
+
+		if (deltaRot.Yaw > 90) {
+			float dif = (deltaRot.Yaw - 90)*-1.0f;
+			AddActorWorldRotation(FRotator(0.0f, dif, 0.0f));
+		}
+		else if (deltaRot.Yaw < -90) {
+			float dif = (deltaRot.Yaw + 90)*-1.0f;
+			AddActorWorldRotation(FRotator(0.0f, dif, 0.0f));
+			
+		}
+	}
 }
 
 // Called to bind functionality to input

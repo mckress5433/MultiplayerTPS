@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Public/Weapon/TPS_GunBase.h"
 #include "TPS_Character.generated.h"
 
 //Forward Declarations 
@@ -21,6 +22,9 @@ private:
 public:
 	// Sets default values for this character's properties
 	ATPS_Character();
+
+	UPROPERTY(Category = Weapons, VisibleAnywhere, BlueprintReadWrite)
+	ATPS_GunBase* EquipedGun;
 
 protected:
 	/********  Character Components  ********/
