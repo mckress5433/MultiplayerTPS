@@ -58,6 +58,13 @@ void ATPS_Character::CrouchInputReleased()
 	bReadyToCrouch = true;
 }
 
+void ATPS_Character::FireWeapon()
+{
+	if (EquipedGun) {
+		EquipedGun->Fire();
+	}
+}
+
 // Called every frame
 void ATPS_Character::Tick(float DeltaTime)
 {
@@ -96,12 +103,14 @@ void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("Move_Y", this, &ATPS_Character::MoveRight);
 	//Jump
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ATPS_Character::Jump);
-	
 	//Camera Rotation
 	PlayerInputComponent->BindAxis("LookUp", this, &ATPS_Character::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookRight", this, &ATPS_Character::AddControllerYawInput);
 	//Crouch
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPS_Character::CrouchInputPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPS_Character::CrouchInputReleased);
+
+	PlayerInputComponent->BindAction("FireWeapon", IE_Pressed, this, &ATPS_Character::FireWeapon);
+
 }
 

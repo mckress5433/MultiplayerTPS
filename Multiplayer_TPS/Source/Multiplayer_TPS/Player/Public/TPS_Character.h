@@ -45,6 +45,8 @@ protected:
 	void CrouchInputPressed();
 	void CrouchInputReleased();
 
+	void FireWeapon();
+
 
 public:	
 	// Called every frame
