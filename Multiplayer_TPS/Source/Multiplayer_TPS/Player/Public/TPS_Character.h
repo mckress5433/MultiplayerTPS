@@ -10,6 +10,7 @@
 //Forward Declarations 
 class UCameraComponent;
 class USpringArmComponent;
+class ATPS_GunBase;
 
 UCLASS()
 class MULTIPLAYER_TPS_API ATPS_Character : public ACharacter
@@ -33,6 +34,9 @@ protected:
 
 	UPROPERTY(Category = Components, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraBoom;
+
+	UPROPERTY(Category = Weapons, EditDefaultsOnly)
+	TSubclassOf<ATPS_GunBase> GunClassToSpawn;
 
 	/********  Protected Functions  ********/
 	// Called when the game starts or when spawned

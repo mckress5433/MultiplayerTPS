@@ -27,6 +27,15 @@ void ATPS_Character::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (GunClassToSpawn) {
+
+		FActorSpawnParameters spawnParams;
+		spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		spawnParams.Owner = this;
+		EquipedGun = GetWorld()->SpawnActor<ATPS_GunBase>(GunClassToSpawn, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
+
+		EquipedGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, EquipedGun->GetWeaponSocketName());
+	}
 }
 
 void ATPS_Character::MoveForward(float _value)
