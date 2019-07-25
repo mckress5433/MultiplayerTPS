@@ -114,3 +114,12 @@ void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 }
 
+FVector ATPS_Character::GetPawnViewLocation() const
+{
+	if (CameraComponent) {
+		return CameraComponent->GetComponentLocation();
+	}
+
+	return Super::GetPawnViewLocation();
+}
+

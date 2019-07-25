@@ -7,6 +7,7 @@
 #include "TPS_GunBase.generated.h"
 
 class USkeletalMeshComponent;
+class UParticleSystem;
 
 UCLASS()
 class MULTIPLAYER_TPS_API ATPS_GunBase : public AActor
@@ -17,7 +18,7 @@ public:
 	// Sets default values for this actor's properties
 	ATPS_GunBase();
 
-	void Fire();
+	virtual void Fire();
 
 protected:
 	// Called when the game starts or when spawned
@@ -25,6 +26,10 @@ protected:
 
 	UPROPERTY(Category = Components, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* GunMesh;
+
+
+
+	/************  Weapon Properties  ***********/
 
 	//The character socket that the gun attaches to
 	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
@@ -35,16 +40,35 @@ protected:
 	//The socket that represents the muzzle of the gun
 	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
 	FName MuzzleSocketName = "Muzzle";
-
+	//Base damage caused by the weapon
 	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
 	float BaseDamage = 10.0f;
-
+	//Damage type of the weapon
 	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UDamageType> DamageType;
-	
+
+
+
+	/************  Weapon Effects  ***********/
+
+	//Particle system used as muzzle flash when gun is fired
+	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
+	UParticleSystem* MuzzleEffect;
+	//Particle system used when projectile impacts with something
+	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
+	UParticleSystem* ImpactEffect;
+	//Particle system used as bullet trace when weapon is fired
+	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
+	UParticleSystem* BulletTraceEffect;
+
+
+	virtual FHitResult GetFiringHitResult(AActor* _gunOwner);
+	virtual void PlayFiringEffects(FHitResult _hitInfo);
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	
 
 };

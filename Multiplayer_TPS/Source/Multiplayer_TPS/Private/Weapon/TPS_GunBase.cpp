@@ -5,6 +5,10 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystem.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Particles/ParticleSystemComponent.h"
+
 // Sets default values
 ATPS_GunBase::ATPS_GunBase()
 {
@@ -22,25 +26,59 @@ void ATPS_GunBase::BeginPlay()
 	
 }
 
+FHitResult ATPS_GunBase::GetFiringHitResult(AActor* _gunOwner)
+{
+	FVector eyeLocation;
+	FRotator eyeRotation;
+	_gunOwner->GetActorEyesViewPoint(eyeLocation, eyeRotation);
+
+	FVector traceEnd = eyeLocation + (eyeRotation.Vector() * 100000);
+
+	FCollisionQueryParams queryParams;
+	queryParams.AddIgnoredActor(_gunOwner);
+	queryParams.AddIgnoredActor(this);
+	queryParams.bTraceComplex = true;
+
+	FHitResult hitInfo;
+
+	GetWorld()->LineTraceSingleByChannel(hitInfo, eyeLocation, traceEnd, ECC_Visibility, queryParams);
+	
+	return hitInfo;
+}
+
+void ATPS_GunBase::PlayFiringEffects(FHitResult _hitInfo)
+{
+	if (MuzzleEffect)
+	{
+		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, GunMesh, MuzzleSocketName);
+	}
+
+	if (BulletTraceEffect)
+	{
+		FVector muzzleLocation = GunMesh->GetSocketLocation(MuzzleSocketName);
+		UParticleSystemComponent* bulletTraceComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletTraceEffect, muzzleLocation);
+		if (bulletTraceComp)
+		{
+			FVector traceEndPoint = _hitInfo.bBlockingHit ? _hitInfo.ImpactPoint : _hitInfo.TraceEnd;
+			bulletTraceComp->SetVectorParameter("BeamEnd", traceEndPoint);
+		}
+	}
+
+	if (_hitInfo.bBlockingHit && ImpactEffect) 
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, _hitInfo.ImpactPoint, _hitInfo.ImpactNormal.Rotation());
+	}
+}
+
 void ATPS_GunBase::Fire()
 {
 	AActor* gunOwner = GetOwner();
 	if (gunOwner) {
+	
+		FHitResult hitInfo = GetFiringHitResult(gunOwner);
 
-		FVector eyeLocation;
-		FRotator eyeRotation;
-		gunOwner->GetActorEyesViewPoint(eyeLocation, eyeRotation);
-
-		FVector traceEnd = eyeLocation + (eyeRotation.Vector() * 10000);
-		FVector traceStart = GunMesh->GetSocketLocation(MuzzleSocketName);
-
-		FCollisionQueryParams queryParams;
-		queryParams.AddIgnoredActor(gunOwner);
-		queryParams.AddIgnoredActor(this);
-		queryParams.bTraceComplex = true;
-
-		FHitResult hitInfo;
-		if (GetWorld()->LineTraceSingleByChannel(hitInfo, traceStart, traceEnd, ECC_Visibility, queryParams)) {
+		if (hitInfo.bBlockingHit) 
+		{
 			//if blocking hit then process damage
 			AActor* hitActor = hitInfo.GetActor();
 
@@ -55,7 +93,7 @@ void ATPS_GunBase::Fire()
 			);
 		}
 
-		DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::White, false, 1.0f, 0, 1.0f);
+		PlayFiringEffects(hitInfo);
 	}
 }
 
