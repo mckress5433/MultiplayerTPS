@@ -97,6 +97,14 @@
 		{
 			"Name": "CryptoKeys",
 			"Enabled": false
+		},
+		{
+			"Name": "PhysXVehicles",
+			"Enabled": false
+		},
+		{
+			"Name": "RuntimePhysXCooking",
+			"Enabled": false
 		}
 	]
 }

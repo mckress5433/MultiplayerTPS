@@ -5,6 +5,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include <Kismet/GameplayStatics.h>
+#include "Public/Weapon/TPS_GrenadeLauncher.h"
+#include <PhysicsEngine/RadialForceComponent.h>
 
 // Sets default values
 ATPS_Grenade::ATPS_Grenade()
@@ -19,6 +21,9 @@ ATPS_Grenade::ATPS_Grenade()
 	ProjectileMovementComp->InitialSpeed = 20000.0f;
 	ProjectileMovementComp->MaxSpeed = 2000.0f;
 	ProjectileMovementComp->bShouldBounce = true;
+
+	RadialForceComp = CreateDefaultSubobject<URadialForceComponent>(TEXT("RadialForceComp"));
+	RadialForceComp->bAutoActivate = false;
 }
 
 void ATPS_Grenade::PrimeGrenade()
@@ -40,6 +45,35 @@ void ATPS_Grenade::Detonate()
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
 	}
 
+	ATPS_GrenadeLauncher* grenadeLauncher = (ATPS_GrenadeLauncher*)GetOwner();
+	
+	if (grenadeLauncher) {
+		float baseDamage = grenadeLauncher->GetBaseDamage();
+		TSubclassOf<UDamageType> damageType = grenadeLauncher->GetDamageType();
+		TArray<AActor*> actorsToIgnore;
+		actorsToIgnore.Add(this);
+
+		UGameplayStatics::ApplyRadialDamage
+		(
+			GetWorld(),
+			baseDamage,
+			GetActorLocation(),
+			RadialForceComp->Radius,
+			damageType,
+			actorsToIgnore
+		);
+	}
+
+	RadialForceComp->Activate(true);
+
+	GrenadeMesh->SetHiddenInGame(true);
+
+	FTimerHandle destructionHandle;
+	GetWorldTimerManager().SetTimer(destructionHandle, this, &ATPS_Grenade::DestroyGrenade, 0.1f, false, 0.1f);
+}
+
+void ATPS_Grenade::DestroyGrenade()
+{
 	Destroy();
 }
 

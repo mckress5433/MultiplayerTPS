@@ -8,6 +8,7 @@
 
 class USkeletalMeshComponent;
 class UProjectileMovementComponent;
+class URadialForceComponent;
 
 UCLASS()
 class MULTIPLAYER_TPS_API ATPS_Grenade : public AActor
@@ -33,8 +34,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UParticleSystem* ExplosionEffect;
 
-	void Detonate();
+	UPROPERTY(Category = Components, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	URadialForceComponent* RadialForceComp;
 
+	void Detonate();
+	void DestroyGrenade();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

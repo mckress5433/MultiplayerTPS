@@ -15,8 +15,10 @@ void ATPS_GrenadeLauncher::Fire()
 
 		FActorSpawnParameters spawnParams;
 		spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		spawnParams.Owner = this;
 
-		ATPS_Grenade* grenade = GetWorld()->SpawnActor<ATPS_Grenade>(ProjectileClass, muzzleLocation, eyeRotation);
+		ATPS_Grenade* grenade = GetWorld()->SpawnActor<ATPS_Grenade>(ProjectileClass, muzzleLocation, eyeRotation, spawnParams);
 		grenade->PrimeGrenade();
+		
 	}
 }

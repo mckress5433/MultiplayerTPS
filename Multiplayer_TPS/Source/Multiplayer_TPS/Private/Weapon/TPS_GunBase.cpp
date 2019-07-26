@@ -29,3 +29,13 @@ FName ATPS_GunBase::GetWeaponSocketName()
 	return WeaponSocketName;
 }
 
+float ATPS_GunBase::GetBaseDamage()
+{
+	return BaseDamage;
+}
+
+TSubclassOf<UDamageType> ATPS_GunBase::GetDamageType()
+{
+	return DamageType;
+}
+
