@@ -34,6 +34,26 @@ float ATPS_GunBase::GetBaseDamage()
 	return BaseDamage;
 }
 
+float ATPS_GunBase::GetZoomedFOV()
+{
+	return ZoomedFOV;
+}
+
+float ATPS_GunBase::GetZoomInterpSpeed()
+{
+	return ZoomInterpSpeed;
+}
+
+float ATPS_GunBase::GetZoomedCameraLagSpeed()
+{
+	return ZoomedCameraLagSpeed;
+}
+
+bool ATPS_GunBase::GetCanZoom()
+{
+	return bCanZoom;
+}
+
 TSubclassOf<UDamageType> ATPS_GunBase::GetDamageType()
 {
 	return DamageType;

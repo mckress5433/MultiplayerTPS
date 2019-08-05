@@ -5,6 +5,10 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Actor.h"
+#include "UnrealMathUtility.h"
+
+
 
 // Sets default values
 ATPS_Character::ATPS_Character()
@@ -14,7 +18,7 @@ ATPS_Character::ATPS_Character()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->bUsePawnControlRotation = true;
-	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->SetupAttachment(GetMesh(), "head");
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(CameraBoom);
@@ -26,6 +30,9 @@ ATPS_Character::ATPS_Character()
 void ATPS_Character::BeginPlay()
 {
 	Super::BeginPlay();
+
+	DefaultFOV = CameraComponent->FieldOfView;
+	DefaultCameraLagSpeed = CameraBoom->CameraLagSpeed;
 	
 	if (GunClassToSpawn) {
 
@@ -74,6 +81,47 @@ void ATPS_Character::FireWeapon()
 	}
 }
 
+void ATPS_Character::AimInputPressed()
+{
+	
+	if (EquipedGun && EquipedGun->GetCanZoom()) {
+		bIsAiming = true;
+		GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
+		CameraBoom->CameraLagSpeed = EquipedGun->GetZoomedCameraLagSpeed();
+	}
+}
+
+void ATPS_Character::AimInputReleased()
+{
+	bIsAiming = false;
+	GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
+	CameraBoom->CameraLagSpeed = DefaultCameraLagSpeed;
+}
+
+void ATPS_Character::ZoomTimerEvent()
+{
+	float currentFOV = CameraComponent->FieldOfView;
+	float targetFOV;
+
+	if (bIsAiming) {
+		targetFOV = EquipedGun->GetZoomedFOV();
+	}
+	else {
+		targetFOV = DefaultFOV;
+	}
+
+
+	if (currentFOV != targetFOV) {
+		float newFOV = FMath::FInterpTo(currentFOV, targetFOV, 0.01f, EquipedGun->GetZoomInterpSpeed());
+		CameraComponent->SetFieldOfView(newFOV);
+	}
+	else {
+		GetWorldTimerManager().ClearTimer(ZoomTimerHandle);
+	}
+	
+
+}
+
 // Called every frame
 void ATPS_Character::Tick(float DeltaTime)
 {
@@ -118,9 +166,10 @@ void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	//Crouch
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPS_Character::CrouchInputPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPS_Character::CrouchInputReleased);
-
+	//Gun Controls
 	PlayerInputComponent->BindAction("FireWeapon", IE_Pressed, this, &ATPS_Character::FireWeapon);
-
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATPS_Character::AimInputPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATPS_Character::AimInputReleased);
 }
 
 FVector ATPS_Character::GetPawnViewLocation() const
