@@ -3,6 +3,9 @@
 
 #include "TPS_GunBase.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/Actor.h"
+#include <UnrealMathUtility.h>
+#include "Player/Public/TPS_Character.h"
 
 
 // Sets default values
@@ -17,12 +20,63 @@ ATPS_GunBase::ATPS_GunBase()
 void ATPS_GunBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	BulletCount = MagazineSize;
+	BurstFireCount = MaxBurst;
+	TimeBetweenShots = 60.0f / RateOfFire;
+}
+
+void ATPS_GunBase::BeginFire()
+{
+	if (!bIsFiring)
+	{
+		bIsFiring = true;
+		float firstDelay = FMath::Max(LastFireTime + TimeBetweenShots - GetWorld()->GetTimeSeconds(), 0.0f);
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ATPS_GunBase::Fire, TimeBetweenShots, true, firstDelay);
+	}
+}
+
+void ATPS_GunBase::EndFire()
+{
+	bIsFiring = false;
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	if (bIsBurstFire) {
+		BurstFireCount = MaxBurst;
+		if (BulletCount > 0) {
+			bCanFire = true;
+		}
+	}
+}
+
+void ATPS_GunBase::Reload()
+{
+	BulletCount = MagazineSize;
+	bCanFire = true;
+}
+
+bool ATPS_GunBase::CanReload()
+{
+	return (MagazineSize != BulletCount);
 }
 
 void ATPS_GunBase::Fire()
 {
+	if (!bCanFire) return;
 
+	ATPS_Character* gunOwner = Cast<ATPS_Character>(GetOwner());
+	if (gunOwner) {
+		gunOwner->PlayFiringMontage();
+	}
+
+	LastFireTime = GetWorld()->TimeSeconds;
+	BulletCount--;
+
+	if(bIsBurstFire) BurstFireCount--;
+	
+	if (BulletCount <= 0 || BurstFireCount <= 0) {
+		bCanFire = false;
+		EndFire();
+	}
 }
 
 FName ATPS_GunBase::GetWeaponSocketName()

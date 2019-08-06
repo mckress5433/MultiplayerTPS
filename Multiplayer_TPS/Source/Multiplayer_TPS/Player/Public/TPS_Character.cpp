@@ -18,12 +18,18 @@ ATPS_Character::ATPS_Character()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->bUsePawnControlRotation = true;
-	CameraBoom->SetupAttachment(GetMesh(), "head");
+	CameraBoom->SetupAttachment(RootComponent);
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(CameraBoom);
 
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
+}
+
+void ATPS_Character::ReloadFinished()
+{
+	bIsReloading = false;
+	EquipedGun->Reload();
 }
 
 // Called when the game starts or when spawned
@@ -74,10 +80,17 @@ void ATPS_Character::CrouchInputReleased()
 	bReadyToCrouch = true;
 }
 
-void ATPS_Character::FireWeapon()
+void ATPS_Character::FireInputPressed()
 {
 	if (EquipedGun) {
-		EquipedGun->Fire();
+		EquipedGun->BeginFire();
+	}
+}
+
+void ATPS_Character::FireInputReleased()
+{
+	if (EquipedGun) {
+		EquipedGun->EndFire();
 	}
 }
 
@@ -96,6 +109,14 @@ void ATPS_Character::AimInputReleased()
 	bIsAiming = false;
 	GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
 	CameraBoom->CameraLagSpeed = DefaultCameraLagSpeed;
+}
+
+void ATPS_Character::ReloadInputPressed()
+{
+	if (EquipedGun && EquipedGun->CanReload() && !bIsReloading) {
+		bIsReloading = false;
+		PlayReloadMontage();
+	}
 }
 
 void ATPS_Character::ZoomTimerEvent()
@@ -167,9 +188,11 @@ void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPS_Character::CrouchInputPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPS_Character::CrouchInputReleased);
 	//Gun Controls
-	PlayerInputComponent->BindAction("FireWeapon", IE_Pressed, this, &ATPS_Character::FireWeapon);
+	PlayerInputComponent->BindAction("FireWeapon", IE_Pressed, this, &ATPS_Character::FireInputPressed);
+	PlayerInputComponent->BindAction("FireWeapon", IE_Released, this, &ATPS_Character::FireInputReleased);
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATPS_Character::AimInputPressed);
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATPS_Character::AimInputReleased);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATPS_Character::ReloadInputPressed);
 }
 
 FVector ATPS_Character::GetPawnViewLocation() const

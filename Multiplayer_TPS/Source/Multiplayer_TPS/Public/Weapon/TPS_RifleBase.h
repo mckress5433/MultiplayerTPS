@@ -16,7 +16,9 @@ class MULTIPLAYER_TPS_API ATPS_RifleBase : public ATPS_PistolBase
 	
 public:
 
-	virtual void Fire() override;
+	
 
 protected:
+	
+	virtual void Fire() override;
 };

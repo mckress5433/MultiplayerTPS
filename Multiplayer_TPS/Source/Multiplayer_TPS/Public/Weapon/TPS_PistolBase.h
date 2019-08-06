@@ -17,10 +17,10 @@ class MULTIPLAYER_TPS_API ATPS_PistolBase : public ATPS_GunBase
 
 public:
 
-	virtual void Fire() override;
-
 
 protected:
+	virtual void Fire() override;
+
 	//Particle system used as muzzle flash when gun is fired
 	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
 	UParticleSystem* MuzzleEffect;

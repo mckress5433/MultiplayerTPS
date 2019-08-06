@@ -21,6 +21,10 @@ static FAutoConsoleVariableRef CVARDebugWeaponDrawing(
 
 void ATPS_PistolBase::Fire()
 {
+	if (!bCanFire) return;
+
+	Super::Fire();
+
 	AActor* gunOwner = GetOwner();
 	if (gunOwner) 
 	{

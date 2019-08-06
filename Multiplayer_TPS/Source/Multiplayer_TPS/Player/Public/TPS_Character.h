@@ -21,6 +21,7 @@ class MULTIPLAYER_TPS_API ATPS_Character : public ACharacter
 private:
 
 	bool bReadyToCrouch = true;
+	bool bIsReloading = false;
 
 	//Default Field Of View for player when not aiming down sights
 	float DefaultFOV;
@@ -33,6 +34,11 @@ private:
 public:
 	// Sets default values for this character's properties
 	ATPS_Character();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayFiringMontage();
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayReloadMontage();
 
 protected:
 
@@ -52,9 +58,12 @@ protected:
 	UPROPERTY(Category = "Weapons", EditDefaultsOnly)
 	TSubclassOf<ATPS_GunBase> GunClassToSpawn;
 
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
+	UFUNCTION(BlueprintCallable)
+	void ReloadFinished();
+
 
 
 	/*Character Control Functions*/
@@ -64,10 +73,13 @@ protected:
 	void CrouchInputPressed();
 	void CrouchInputReleased();
 
-	void FireWeapon();
+	void FireInputPressed();
+	void FireInputReleased();
 
 	void AimInputPressed();
 	void AimInputReleased();
+
+	void ReloadInputPressed();
 
 public:	
 	// Called every frame

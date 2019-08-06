@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include <Engine/EngineTypes.h>
 #include "TPS_GunBase.generated.h"
 
 class USkeletalMeshComponent;
@@ -19,8 +20,10 @@ public:
 	// Sets default values for this actor's properties
 	ATPS_GunBase();
 
-	UFUNCTION(BlueprintCallable)
-	virtual void Fire();
+	void BeginFire();
+	void EndFire();
+	void Reload();
+	bool CanReload();
 
 	FName GetWeaponSocketName();
 
@@ -40,6 +43,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void Fire();
 
 	UPROPERTY(Category = Components, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* GunMesh;
@@ -68,6 +73,33 @@ protected:
 	float ZoomedCameraLagSpeed = 50.0f;
 	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
 	bool bCanZoom = true;
+
+	FTimerHandle FireTimerHandle;
+
+	bool bCanFire = true;
+	bool bIsFiring = false;
+	//Number of Bullets in chamber
+	int BulletCount;
+	//Number of shots before reloading
+	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
+	int MagazineSize = 6;
+	
+	//Number of shots fired during burst
+	int BurstFireCount;
+	//Number of shots that can be fired in one burst
+	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
+	bool bIsBurstFire = false;
+	//Number of shots that can be fired in one burst
+	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
+	int MaxBurst = 6;
+
+	//Timestamp of last shot fired
+	float LastFireTime = 0;
+	//Amount of time between shots (calculated from RateOfFire)
+	float TimeBetweenShots;
+	//Number of shots per minute
+	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
+	float RateOfFire = 600;
 
 	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UCameraShake> FiringCameraShake;
