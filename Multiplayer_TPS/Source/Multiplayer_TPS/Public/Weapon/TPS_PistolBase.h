@@ -8,6 +8,8 @@
 
 class UParticleSystem;
 
+
+
 UCLASS()
 class MULTIPLAYER_TPS_API ATPS_PistolBase : public ATPS_GunBase
 {
@@ -24,7 +26,10 @@ protected:
 	UParticleSystem* MuzzleEffect;
 	//Particle system used when projectile impacts with something
 	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
-	UParticleSystem* ImpactEffect;
+	UParticleSystem* ImpactEffect_Default;
+	//Particle system used when projectile impacts with flesh
+	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
+	UParticleSystem* ImpactEffect_Flesh;
 	//Particle system used as bullet trace when weapon is fired
 	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
 	UParticleSystem* BulletTraceEffect;
@@ -32,6 +37,6 @@ protected:
 
 
 	virtual FHitResult GetFiringHitResult(AActor* _gunOwner);
-	virtual void PlayFiringEffects(FHitResult _hitInfo);
+	virtual void PlayFiringEffects(FHitResult _hitInfo, EPhysicalSurface _surfaceType);
 	
 };

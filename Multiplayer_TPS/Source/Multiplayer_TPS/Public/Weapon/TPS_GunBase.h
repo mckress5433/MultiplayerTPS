@@ -7,6 +7,8 @@
 #include "TPS_GunBase.generated.h"
 
 class USkeletalMeshComponent;
+class UCameraShake;
+
 
 UCLASS()
 class MULTIPLAYER_TPS_API ATPS_GunBase : public AActor
@@ -66,6 +68,8 @@ protected:
 	float ZoomedCameraLagSpeed = 50.0f;
 	UPROPERTY(Category = WeaponProperties, EditDefaultsOnly, BlueprintReadOnly)
 	bool bCanZoom = true;
-	
+
+	UPROPERTY(Category = WeaponEffects, EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<UCameraShake> FiringCameraShake;
 
 };

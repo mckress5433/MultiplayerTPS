@@ -6,6 +6,18 @@
 #include "Particles/ParticleSystem.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include <DrawDebugHelpers.h>
+#include "IConsoleManager.h"
+#include <PhysicalMaterials/PhysicalMaterial.h>
+#include "Multiplayer_TPS.h"
+
+static int32 DebugWeaponDrawing = 0;
+static FAutoConsoleVariableRef CVARDebugWeaponDrawing(
+	TEXT("TPS.DebugWeapons"),
+	DebugWeaponDrawing,
+	TEXT("Draw debug lines for weapons"),
+	ECVF_Cheat
+);
 
 void ATPS_PistolBase::Fire()
 {
@@ -14,16 +26,21 @@ void ATPS_PistolBase::Fire()
 	{
 
 		FHitResult hitInfo = GetFiringHitResult(gunOwner);
-
+		
+		EPhysicalSurface surfaceType = UPhysicalMaterial::DetermineSurfaceType(hitInfo.PhysMaterial.Get());
+		
 		if (hitInfo.bBlockingHit) 
 		{
+			float actualDamage = BaseDamage;
+			if (surfaceType == SURFACE_FLESHVULNERABLE) actualDamage *= 2.0f;
+
 			//if blocking hit then process damage
 			AActor* hitActor = hitInfo.GetActor();
 
 			UGameplayStatics::ApplyPointDamage
 			(
 				hitActor,
-				BaseDamage,
+				actualDamage,
 				hitInfo.ImpactNormal,
 				hitInfo,
 				gunOwner->GetInstigatorController(),
@@ -32,7 +49,7 @@ void ATPS_PistolBase::Fire()
 			);
 		}
 
-		PlayFiringEffects(hitInfo);
+		PlayFiringEffects(hitInfo, surfaceType);
 	}
 }
 
@@ -47,16 +64,24 @@ FHitResult ATPS_PistolBase::GetFiringHitResult(AActor* _gunOwner)
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(_gunOwner);
 	queryParams.AddIgnoredActor(this);
+	queryParams.bReturnPhysicalMaterial = true;
 	queryParams.bTraceComplex = true;
 	
 	FHitResult hitInfo;
 	
-	GetWorld()->LineTraceSingleByChannel(hitInfo, eyeLocation, traceEnd, ECC_Visibility, queryParams);
+	GetWorld()->LineTraceSingleByChannel(hitInfo, eyeLocation, traceEnd, COLLISION_WEAPON, queryParams);
 		
+	if (DebugWeaponDrawing > 0) {
+		DrawDebugLine(GetWorld(), eyeLocation, traceEnd, FColor::Blue, false, 1.0f, 0, 1.0f);
+		if (hitInfo.bBlockingHit) {
+			DrawDebugSphere(GetWorld(), hitInfo.ImpactPoint, 10.0f, 10.0f, FColor::Green, false, 1.0f, 0, 1.0f);
+		}
+	}
+
 	return hitInfo;
 }
 
-void ATPS_PistolBase::PlayFiringEffects(FHitResult _hitInfo)
+void ATPS_PistolBase::PlayFiringEffects(FHitResult _hitInfo, EPhysicalSurface _surfaceType)
 {
 	if (MuzzleEffect)
 	{
@@ -73,9 +98,33 @@ void ATPS_PistolBase::PlayFiringEffects(FHitResult _hitInfo)
 			bulletTraceComp->SetVectorParameter("BeamEnd", traceEndPoint);
 		}
 	}
-		
-	if (_hitInfo.bBlockingHit && ImpactEffect) 
+	
+	if (_hitInfo.bBlockingHit)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, _hitInfo.ImpactPoint, _hitInfo.ImpactNormal.Rotation());
+		UParticleSystem* selectedImpactEffect = nullptr;
+
+		switch (_surfaceType) 
+		{
+			case SURFACE_FLESHDEFAULT:
+			case SURFACE_FLESHVULNERABLE:
+				selectedImpactEffect = ImpactEffect_Flesh;
+				break;
+			default:
+				selectedImpactEffect = ImpactEffect_Default;
+		}
+
+		if (selectedImpactEffect) 
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), selectedImpactEffect, _hitInfo.ImpactPoint, _hitInfo.ImpactNormal.Rotation());
+		}
+		
+	}
+
+	APawn* GunOwner = Cast<APawn>(GetOwner());
+	if (GunOwner) {
+		APlayerController* PC = Cast<APlayerController>(GunOwner->GetController());
+		if (PC) {
+			PC->ClientPlayCameraShake(FiringCameraShake);
+		}
 	}
 }
