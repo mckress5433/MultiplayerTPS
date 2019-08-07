@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Actor.h"
 #include "UnrealMathUtility.h"
+#include "Public/Components/TPS_HealthComponent.h"
 
 
 
@@ -24,12 +25,8 @@ ATPS_Character::ATPS_Character()
 	CameraComponent->SetupAttachment(CameraBoom);
 
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
-}
 
-void ATPS_Character::ReloadFinished()
-{
-	bIsReloading = false;
-	EquipedGun->Reload();
+	HealthComponent = CreateDefaultSubobject<UTPS_HealthComponent>(TEXT("HealthComponent"));
 }
 
 // Called when the game starts or when spawned
@@ -96,26 +93,31 @@ void ATPS_Character::FireInputReleased()
 
 void ATPS_Character::AimInputPressed()
 {
-	
-	if (EquipedGun && EquipedGun->GetCanZoom()) {
-		bIsAiming = true;
-		GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
-		CameraBoom->CameraLagSpeed = EquipedGun->GetZoomedCameraLagSpeed();
-	}
+	bWishAimState = true;
+	UpdateAimState(bWishAimState);
 }
 
 void ATPS_Character::AimInputReleased()
 {
-	bIsAiming = false;
-	GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
-	CameraBoom->CameraLagSpeed = DefaultCameraLagSpeed;
+	bWishAimState = false;
+	UpdateAimState(bWishAimState);
 }
 
-void ATPS_Character::ReloadInputPressed()
+void ATPS_Character::UpdateAimState(bool _newAimState)
 {
-	if (EquipedGun && EquipedGun->CanReload() && !bIsReloading) {
-		bIsReloading = false;
-		PlayReloadMontage();
+	if (_newAimState && !bIsAiming) {
+		if (EquipedGun && EquipedGun->GetCanZoom() && !bIsReloading) {
+			bIsAiming = true;
+			GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
+			CameraBoom->CameraLagSpeed = EquipedGun->GetZoomedCameraLagSpeed();
+		}
+	}
+	else if(!_newAimState && bIsAiming){
+		if (!bIsReloading) {
+			bIsAiming = false;
+			GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
+			CameraBoom->CameraLagSpeed = DefaultCameraLagSpeed;
+		}
 	}
 }
 
@@ -131,7 +133,6 @@ void ATPS_Character::ZoomTimerEvent()
 		targetFOV = DefaultFOV;
 	}
 
-
 	if (currentFOV != targetFOV) {
 		float newFOV = FMath::FInterpTo(currentFOV, targetFOV, 0.01f, EquipedGun->GetZoomInterpSpeed());
 		CameraComponent->SetFieldOfView(newFOV);
@@ -139,8 +140,22 @@ void ATPS_Character::ZoomTimerEvent()
 	else {
 		GetWorldTimerManager().ClearTimer(ZoomTimerHandle);
 	}
-	
+}
 
+void ATPS_Character::ReloadInputPressed()
+{
+	if (EquipedGun && EquipedGun->CanReload() && !bIsReloading) {
+		bIsReloading = true;
+		PlayReloadMontage();
+	}
+}
+
+void ATPS_Character::ReloadFinished()
+{
+	bIsReloading = false;
+	EquipedGun->Reload();
+
+	UpdateAimState(bWishAimState);
 }
 
 // Called every frame

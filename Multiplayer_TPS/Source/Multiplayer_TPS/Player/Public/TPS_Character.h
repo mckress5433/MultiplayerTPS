@@ -12,6 +12,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class ATPS_GunBase;
+class UTPS_HealthComponent;
 
 UCLASS()
 class MULTIPLAYER_TPS_API ATPS_Character : public ACharacter
@@ -22,6 +23,7 @@ private:
 
 	bool bReadyToCrouch = true;
 	bool bIsReloading = false;
+	bool bWishAimState = false;
 
 	//Default Field Of View for player when not aiming down sights
 	float DefaultFOV;
@@ -58,6 +60,9 @@ protected:
 	UPROPERTY(Category = "Weapons", EditDefaultsOnly)
 	TSubclassOf<ATPS_GunBase> GunClassToSpawn;
 
+	UPROPERTY(Category = Components, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UTPS_HealthComponent* HealthComponent;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
@@ -78,6 +83,7 @@ protected:
 
 	void AimInputPressed();
 	void AimInputReleased();
+	void UpdateAimState(bool _newAimState);
 
 	void ReloadInputPressed();
 

@@ -7,6 +7,13 @@
 #include <UnrealMathUtility.h>
 #include "Player/Public/TPS_Character.h"
 
+static int32 DebugInfiniteAmmo = 0;
+static FAutoConsoleVariableRef CVARDebugInfiniteAmmo(
+	TEXT("TPS.DebugInfiniteAmmo"),
+	DebugInfiniteAmmo,
+	TEXT("Ignores Ammo Count"),
+	ECVF_Cheat
+);
 
 // Sets default values
 ATPS_GunBase::ATPS_GunBase()
@@ -69,7 +76,8 @@ void ATPS_GunBase::Fire()
 	}
 
 	LastFireTime = GetWorld()->TimeSeconds;
-	BulletCount--;
+
+	if(DebugInfiniteAmmo == 0) BulletCount--;
 
 	if(bIsBurstFire) BurstFireCount--;
 	
