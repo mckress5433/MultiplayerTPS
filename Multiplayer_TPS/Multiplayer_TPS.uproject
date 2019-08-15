@@ -105,6 +105,10 @@
 		{
 			"Name": "RuntimePhysXCooking",
 			"Enabled": false
+		},
+		{
+			"Name": "ApexDestruction",
+			"Enabled": true
 		}
 	]
 }
