@@ -44,6 +44,8 @@ void UTPS_HealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damag
 		return;
 	}
 	UpdateHealth(Damage*-1.0f);
+
+	OnDamageReceived.Broadcast(DamagedActor, Damage, DamageType, InstigatedBy, DamageCauser);
 }
 
 void UTPS_HealthComponent::UpdateHealth(float _HealthDelta)
@@ -54,5 +56,7 @@ void UTPS_HealthComponent::UpdateHealth(float _HealthDelta)
 	if (DebugHealth > 0) {
 		UE_LOG(LogTemp, Log, TEXT("Health changed: %s"), *FString::SanitizeFloat(Health));
 	}
+
+	OnHealthChanged.Broadcast(this, Health, _HealthDelta);
 }
 

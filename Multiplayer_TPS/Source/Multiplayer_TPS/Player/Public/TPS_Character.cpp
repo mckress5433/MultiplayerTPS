@@ -8,7 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "UnrealMathUtility.h"
 #include "Public/Components/TPS_HealthComponent.h"
-
+#include "Components/CapsuleComponent.h"
 
 
 // Sets default values
@@ -45,6 +45,19 @@ void ATPS_Character::BeginPlay()
 		EquipedGun = GetWorld()->SpawnActor<ATPS_GunBase>(GunClassToSpawn, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
 
 		EquipedGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, EquipedGun->GetWeaponSocketName());
+	}
+
+	HealthComponent->OnHealthChanged.AddDynamic(this, &ATPS_Character::OnHealthChanged);
+}
+
+void ATPS_Character::OnHealthChanged(UTPS_HealthComponent* _healthComp, float _health, float _healthDelta)
+{
+	if (_health <= 0.0f && !bDied)
+	{
+		GetMovementComponent()->StopMovementImmediately();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		bDied = true;
 	}
 }
 

@@ -24,6 +24,7 @@ private:
 	bool bReadyToCrouch = true;
 	bool bIsReloading = false;
 	bool bWishAimState = false;
+	bool bDied = false;
 
 	//Default Field Of View for player when not aiming down sights
 	float DefaultFOV;
@@ -66,10 +67,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-	UFUNCTION(BlueprintCallable)
-	void ReloadFinished();
-
-
+	UFUNCTION()
+	void OnHealthChanged(UTPS_HealthComponent* _healthComp, float _health, float _healthDelta);
 
 	/*Character Control Functions*/
 	void MoveForward(float _value);
@@ -86,6 +85,10 @@ protected:
 	void UpdateAimState(bool _newAimState);
 
 	void ReloadInputPressed();
+
+	UFUNCTION(BlueprintCallable)
+	void ReloadFinished();
+
 
 public:	
 	// Called every frame
