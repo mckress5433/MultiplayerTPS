@@ -9,6 +9,7 @@
 #include "UnrealMathUtility.h"
 #include "Public/Components/TPS_HealthComponent.h"
 #include "Components/CapsuleComponent.h"
+#include <UnrealNetwork.h>
 
 
 // Sets default values
@@ -28,6 +29,7 @@ ATPS_Character::ATPS_Character()
 
 	HealthComponent = CreateDefaultSubobject<UTPS_HealthComponent>(TEXT("HealthComponent"));
 }
+
 
 // Called when the game starts or when spawned
 void ATPS_Character::BeginPlay()
@@ -50,17 +52,51 @@ void ATPS_Character::BeginPlay()
 	HealthComponent->OnHealthChanged.AddDynamic(this, &ATPS_Character::OnHealthChanged);
 }
 
-void ATPS_Character::OnHealthChanged(UTPS_HealthComponent* _healthComp, float _health, float _healthDelta)
+// Called every frame
+void ATPS_Character::Tick(float DeltaTime)
 {
-	if (_health <= 0.0f && !bDied)
-	{
-		GetMovementComponent()->StopMovementImmediately();
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Super::Tick(DeltaTime);
 
-		bDied = true;
+	if (IsLocallyControlled())
+	{
+		if (GetVelocity().Size() > 0.0f) {
+			bUseControllerRotationYaw = true;
+		}
+		else {
+			bUseControllerRotationYaw = false;
+
+			FRotator actorRot = GetActorRotation();
+			FRotator controlRot = GetControlRotation();
+			FRotator deltaRot = actorRot - controlRot;
+			deltaRot.Normalize();
+
+			if (deltaRot.Yaw > 90) {
+				float dif = (deltaRot.Yaw - 90)*-1.0f;
+				AddActorWorldRotation(FRotator(0.0f, dif, 0.0f));
+			}
+			else if (deltaRot.Yaw < -90) {
+				float dif = (deltaRot.Yaw + 90)*-1.0f;
+				AddActorWorldRotation(FRotator(0.0f, dif, 0.0f));
+
+			}
+		}
+
+		ServerSetClientControlRotation(GetControlRotation());
 	}
 }
 
+FRotator ATPS_Character::GetClientControlRotation()
+{
+	return ClientControlRotation;
+}
+
+void ATPS_Character::ServerSetClientControlRotation_Implementation(FRotator _clientControlRotation)
+{
+	ClientControlRotation = _clientControlRotation;
+}
+
+
+/*MOVEMENT*/
 void ATPS_Character::MoveForward(float _value)
 {
 	AddMovementInput(GetActorForwardVector()*_value);
@@ -72,6 +108,7 @@ void ATPS_Character::MoveRight(float _value)
 }
 
 
+/*CROUCHING*/
 void ATPS_Character::CrouchInputPressed()
 {
 	if (bReadyToCrouch) {
@@ -90,6 +127,8 @@ void ATPS_Character::CrouchInputReleased()
 	bReadyToCrouch = true;
 }
 
+
+/*FIRING*/
 void ATPS_Character::FireInputPressed()
 {
 	if (EquipedGun) {
@@ -104,6 +143,8 @@ void ATPS_Character::FireInputReleased()
 	}
 }
 
+
+/*AIMING*/
 void ATPS_Character::AimInputPressed()
 {
 	bWishAimState = true;
@@ -155,6 +196,8 @@ void ATPS_Character::ZoomTimerEvent()
 	}
 }
 
+
+/*RELOADING*/
 void ATPS_Character::ReloadInputPressed()
 {
 	if (EquipedGun && EquipedGun->CanReload() && !bIsReloading) {
@@ -171,33 +214,7 @@ void ATPS_Character::ReloadFinished()
 	UpdateAimState(bWishAimState);
 }
 
-// Called every frame
-void ATPS_Character::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 
-	if (GetVelocity().Size() > 0.0f) {
-		bUseControllerRotationYaw = true;
-	}
-	else {
-		bUseControllerRotationYaw = false;
-
-		FRotator actorRot = GetActorRotation();
-		FRotator controlRot = GetControlRotation();
-		FRotator deltaRot = actorRot - controlRot;
-		deltaRot.Normalize();
-
-		if (deltaRot.Yaw > 90) {
-			float dif = (deltaRot.Yaw - 90)*-1.0f;
-			AddActorWorldRotation(FRotator(0.0f, dif, 0.0f));
-		}
-		else if (deltaRot.Yaw < -90) {
-			float dif = (deltaRot.Yaw + 90)*-1.0f;
-			AddActorWorldRotation(FRotator(0.0f, dif, 0.0f));
-			
-		}
-	}
-}
 
 // Called to bind functionality to input
 void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -232,3 +249,20 @@ FVector ATPS_Character::GetPawnViewLocation() const
 	return Super::GetPawnViewLocation();
 }
 
+void ATPS_Character::OnHealthChanged(UTPS_HealthComponent* _healthComp, float _health, float _healthDelta)
+{
+	if (_health <= 0.0f && !bDied)
+	{
+		GetMovementComponent()->StopMovementImmediately();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		bDied = true;
+	}
+}
+
+void ATPS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATPS_Character, ClientControlRotation);
+}

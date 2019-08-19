@@ -30,6 +30,11 @@ private:
 	float DefaultFOV;
 	float DefaultCameraLagSpeed;
 
+	UPROPERTY(Replicated)
+	FRotator ClientControlRotation;
+	UFUNCTION(Server, Reliable)
+	void ServerSetClientControlRotation(FRotator _clientControlRotation);
+
 	FTimerHandle ZoomTimerHandle;
 
 	void ZoomTimerEvent();
@@ -40,8 +45,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayFiringMontage();
-	UFUNCTION(BlueprintImplementableEvent)
-	void PlayReloadMontage();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FRotator GetClientControlRotation();
 
 protected:
 
@@ -85,9 +91,10 @@ protected:
 	void UpdateAimState(bool _newAimState);
 
 	void ReloadInputPressed();
-
 	UFUNCTION(BlueprintCallable)
 	void ReloadFinished();
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayReloadMontage();
 
 
 public:	
