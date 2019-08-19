@@ -23,7 +23,10 @@ private:
 
 	bool bReadyToCrouch = true;
 	bool bIsReloading = false;
+
+	UPROPERTY(Replicated)
 	bool bWishAimState = false;
+
 	bool bDied = false;
 
 	//Default Field Of View for player when not aiming down sights
@@ -51,7 +54,7 @@ public:
 
 protected:
 
-	UPROPERTY(Category = "Player State", BlueprintReadOnly)
+	UPROPERTY(Category = "Player State", BlueprintReadOnly, Replicated)
 	bool bIsAiming = false;
 
 	UPROPERTY(Category = "Weapons", BlueprintReadOnly)
@@ -86,7 +89,9 @@ protected:
 	void FireInputPressed();
 	void FireInputReleased();
 
+	UFUNCTION(Server, Reliable)
 	void AimInputPressed();
+	UFUNCTION(Server, Reliable)
 	void AimInputReleased();
 	void UpdateAimState(bool _newAimState);
 

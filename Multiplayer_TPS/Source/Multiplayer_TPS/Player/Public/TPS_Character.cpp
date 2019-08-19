@@ -145,13 +145,13 @@ void ATPS_Character::FireInputReleased()
 
 
 /*AIMING*/
-void ATPS_Character::AimInputPressed()
+void ATPS_Character::AimInputPressed_Implementation()
 {
 	bWishAimState = true;
 	UpdateAimState(bWishAimState);
 }
 
-void ATPS_Character::AimInputReleased()
+void ATPS_Character::AimInputReleased_Implementation()
 {
 	bWishAimState = false;
 	UpdateAimState(bWishAimState);
@@ -265,4 +265,6 @@ void ATPS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ATPS_Character, ClientControlRotation);
+	DOREPLIFETIME(ATPS_Character, bIsAiming);
+	DOREPLIFETIME(ATPS_Character, bWishAimState);
 }
