@@ -22,6 +22,8 @@ class MULTIPLAYER_TPS_API ATPS_Character : public ACharacter
 private:
 
 	bool bReadyToCrouch = true;
+
+	UPROPERTY(Replicated)
 	bool bIsReloading = false;
 
 	UPROPERTY(Replicated)
@@ -46,8 +48,11 @@ public:
 	// Sets default values for this character's properties
 	ATPS_Character();
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void PlayFiringMontage();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayFiringMontage();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayReloadMontage();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FRotator GetClientControlRotation();
@@ -57,7 +62,7 @@ protected:
 	UPROPERTY(Category = "Player State", BlueprintReadOnly, Replicated)
 	bool bIsAiming = false;
 
-	UPROPERTY(Category = "Weapons", BlueprintReadOnly)
+	UPROPERTY(Category = "Weapons", BlueprintReadOnly, Replicated)
 	ATPS_GunBase* EquipedGun;
 
 	/********  Character Components  ********/
@@ -86,8 +91,12 @@ protected:
 	void CrouchInputPressed();
 	void CrouchInputReleased();
 
+	UFUNCTION(Server, Reliable)
 	void FireInputPressed();
+	UFUNCTION(Server, Reliable)
 	void FireInputReleased();
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayFiringMontage();
 
 	UFUNCTION(Server, Reliable)
 	void AimInputPressed();
@@ -95,9 +104,10 @@ protected:
 	void AimInputReleased();
 	void UpdateAimState(bool _newAimState);
 
+	UFUNCTION(Server, Reliable)
 	void ReloadInputPressed();
 	UFUNCTION(BlueprintCallable)
-	void ReloadFinished();
+	void ReloadFinished(bool _reloadSuccessful);
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayReloadMontage();
 

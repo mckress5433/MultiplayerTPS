@@ -37,6 +37,8 @@ protected:
 
 
 	virtual FHitResult GetFiringHitResult(AActor* _gunOwner);
+
+	UFUNCTION(NetMulticast, Reliable)
 	virtual void PlayFiringEffects(FHitResult _hitInfo, EPhysicalSurface _surfaceType);
 	
 };

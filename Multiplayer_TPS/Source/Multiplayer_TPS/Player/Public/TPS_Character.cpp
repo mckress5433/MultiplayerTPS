@@ -30,7 +30,6 @@ ATPS_Character::ATPS_Character()
 	HealthComponent = CreateDefaultSubobject<UTPS_HealthComponent>(TEXT("HealthComponent"));
 }
 
-
 // Called when the game starts or when spawned
 void ATPS_Character::BeginPlay()
 {
@@ -38,17 +37,19 @@ void ATPS_Character::BeginPlay()
 
 	DefaultFOV = CameraComponent->FieldOfView;
 	DefaultCameraLagSpeed = CameraBoom->CameraLagSpeed;
-	
-	if (GunClassToSpawn) {
 
-		FActorSpawnParameters spawnParams;
-		spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		spawnParams.Owner = this;
-		EquipedGun = GetWorld()->SpawnActor<ATPS_GunBase>(GunClassToSpawn, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
+	if (Role == ROLE_Authority)
+	{
+		if (GunClassToSpawn) {
 
-		EquipedGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, EquipedGun->GetWeaponSocketName());
+			FActorSpawnParameters spawnParams;
+			spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			spawnParams.Owner = this;
+			EquipedGun = GetWorld()->SpawnActor<ATPS_GunBase>(GunClassToSpawn, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
+
+			EquipedGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, EquipedGun->GetWeaponSocketName());
+		}
 	}
-
 	HealthComponent->OnHealthChanged.AddDynamic(this, &ATPS_Character::OnHealthChanged);
 }
 
@@ -129,20 +130,24 @@ void ATPS_Character::CrouchInputReleased()
 
 
 /*FIRING*/
-void ATPS_Character::FireInputPressed()
+void ATPS_Character::FireInputPressed_Implementation()
 {
 	if (EquipedGun) {
 		EquipedGun->BeginFire();
 	}
 }
 
-void ATPS_Character::FireInputReleased()
+void ATPS_Character::FireInputReleased_Implementation()
 {
 	if (EquipedGun) {
 		EquipedGun->EndFire();
 	}
 }
 
+void ATPS_Character::MulticastPlayFiringMontage_Implementation()
+{
+	PlayFiringMontage();
+}
 
 /*AIMING*/
 void ATPS_Character::AimInputPressed_Implementation()
@@ -198,20 +203,29 @@ void ATPS_Character::ZoomTimerEvent()
 
 
 /*RELOADING*/
-void ATPS_Character::ReloadInputPressed()
+void ATPS_Character::ReloadInputPressed_Implementation()
 {
 	if (EquipedGun && EquipedGun->CanReload() && !bIsReloading) {
 		bIsReloading = true;
-		PlayReloadMontage();
+		MulticastPlayReloadMontage();
 	}
 }
 
-void ATPS_Character::ReloadFinished()
+void ATPS_Character::MulticastPlayReloadMontage_Implementation()
 {
-	bIsReloading = false;
-	EquipedGun->Reload();
+	PlayReloadMontage();
+}
 
-	UpdateAimState(bWishAimState);
+void ATPS_Character::ReloadFinished(bool _reloadSuccessful)
+{
+	if (ROLE_Authority)
+	{
+		if (_reloadSuccessful)
+			EquipedGun->Reload();
+
+		bIsReloading = false;
+		UpdateAimState(bWishAimState);
+	}
 }
 
 
@@ -267,4 +281,6 @@ void ATPS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ATPS_Character, ClientControlRotation);
 	DOREPLIFETIME(ATPS_Character, bIsAiming);
 	DOREPLIFETIME(ATPS_Character, bWishAimState);
+	DOREPLIFETIME(ATPS_Character, bIsReloading);
+	DOREPLIFETIME(ATPS_Character, EquipedGun);
 }

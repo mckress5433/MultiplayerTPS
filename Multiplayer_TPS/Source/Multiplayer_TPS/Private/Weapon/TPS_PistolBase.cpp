@@ -85,7 +85,7 @@ FHitResult ATPS_PistolBase::GetFiringHitResult(AActor* _gunOwner)
 	return hitInfo;
 }
 
-void ATPS_PistolBase::PlayFiringEffects(FHitResult _hitInfo, EPhysicalSurface _surfaceType)
+void ATPS_PistolBase::PlayFiringEffects_Implementation(FHitResult _hitInfo, EPhysicalSurface _surfaceType)
 {
 	if (MuzzleEffect)
 	{

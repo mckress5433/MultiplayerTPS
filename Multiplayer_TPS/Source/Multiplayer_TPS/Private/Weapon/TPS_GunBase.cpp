@@ -21,6 +21,8 @@ ATPS_GunBase::ATPS_GunBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	GunMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMesh"));
+
+	SetReplicates(true);
 }
 
 // Called when the game starts or when spawned
@@ -55,6 +57,27 @@ void ATPS_GunBase::EndFire()
 	}
 }
 
+void ATPS_GunBase::Fire()
+{
+	if (!bCanFire) return;
+
+	ATPS_Character* gunOwner = Cast<ATPS_Character>(GetOwner());
+	if (gunOwner) {
+		gunOwner->MulticastPlayFiringMontage();
+	}
+
+	LastFireTime = GetWorld()->TimeSeconds;
+
+	if (DebugInfiniteAmmo == 0) BulletCount--;
+
+	if (bIsBurstFire) BurstFireCount--;
+
+	if (BulletCount <= 0 || BurstFireCount <= 0) {
+		bCanFire = false;
+		EndFire();
+	}
+}
+
 void ATPS_GunBase::Reload()
 {
 	BulletCount = MagazineSize;
@@ -64,27 +87,6 @@ void ATPS_GunBase::Reload()
 bool ATPS_GunBase::CanReload()
 {
 	return (MagazineSize != BulletCount);
-}
-
-void ATPS_GunBase::Fire()
-{
-	if (!bCanFire) return;
-
-	ATPS_Character* gunOwner = Cast<ATPS_Character>(GetOwner());
-	if (gunOwner) {
-		gunOwner->PlayFiringMontage();
-	}
-
-	LastFireTime = GetWorld()->TimeSeconds;
-
-	if(DebugInfiniteAmmo == 0) BulletCount--;
-
-	if(bIsBurstFire) BurstFireCount--;
-	
-	if (BulletCount <= 0 || BurstFireCount <= 0) {
-		bCanFire = false;
-		EndFire();
-	}
 }
 
 FName ATPS_GunBase::GetWeaponSocketName()
