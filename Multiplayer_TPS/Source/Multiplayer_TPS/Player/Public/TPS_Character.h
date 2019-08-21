@@ -29,6 +29,12 @@ private:
 	UPROPERTY(Replicated)
 	bool bWishAimState = false;
 
+	UPROPERTY(Replicated)
+	bool bIsSprinting = false;
+	float DefaultWalkSpeed;
+	UPROPERTY(EditDefaultsOnly)
+	float SprintSpeed = 800.0f;
+
 	bool bDied = false;
 
 	//Default Field Of View for player when not aiming down sights
@@ -92,25 +98,30 @@ protected:
 	void CrouchInputReleased();
 
 	UFUNCTION(Server, Reliable)
-	void FireInputPressed();
+	void ServerFireInputPressed();
 	UFUNCTION(Server, Reliable)
-	void FireInputReleased();
+	void ServerFireInputReleased();
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayFiringMontage();
 
 	UFUNCTION(Server, Reliable)
-	void AimInputPressed();
+	void ServerAimInputPressed();
 	UFUNCTION(Server, Reliable)
-	void AimInputReleased();
+	void ServerAimInputReleased();
 	void UpdateAimState(bool _newAimState);
 
 	UFUNCTION(Server, Reliable)
-	void ReloadInputPressed();
+	void ServerReloadInputPressed();
 	UFUNCTION(BlueprintCallable)
 	void ReloadFinished(bool _reloadSuccessful);
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayReloadMontage();
 
+	UFUNCTION(Server, Reliable)
+	void ServerSprintInputPressed();
+	UFUNCTION(Server, Reliable)
+	void ServerSprintInputReleased();
+	void StopSprinting();
 
 public:	
 	// Called every frame

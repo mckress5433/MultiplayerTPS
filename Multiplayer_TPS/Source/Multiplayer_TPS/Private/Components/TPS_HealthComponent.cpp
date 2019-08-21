@@ -4,6 +4,7 @@
 #include "TPS_HealthComponent.h"
 #include <GameFramework/Actor.h>
 #include <UnrealMathUtility.h>
+#include <UnrealNetwork.h>
 
 
 static int32 DebugHealth = 0;
@@ -21,6 +22,7 @@ UTPS_HealthComponent::UTPS_HealthComponent()
 
 	Health = 100.0f;
 	MaxHealth = 100.0f;
+
 }
 
 
@@ -57,6 +59,17 @@ void UTPS_HealthComponent::UpdateHealth(float _HealthDelta)
 		UE_LOG(LogTemp, Log, TEXT("Health changed: %s"), *FString::SanitizeFloat(Health));
 	}
 
+	MulticastUpdateHealth(_HealthDelta);
+}
+
+void UTPS_HealthComponent::MulticastUpdateHealth_Implementation(float _HealthDelta)
+{
 	OnHealthChanged.Broadcast(this, Health, _HealthDelta);
 }
 
+void UTPS_HealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UTPS_HealthComponent, Health);
+}

@@ -37,6 +37,7 @@ void ATPS_Character::BeginPlay()
 
 	DefaultFOV = CameraComponent->FieldOfView;
 	DefaultCameraLagSpeed = CameraBoom->CameraLagSpeed;
+	DefaultWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 
 	if (Role == ROLE_Authority)
 	{
@@ -119,6 +120,7 @@ void ATPS_Character::CrouchInputPressed()
 		}
 		else {
 			Crouch();
+			ServerSprintInputReleased();
 		}
 	}
 }
@@ -130,14 +132,17 @@ void ATPS_Character::CrouchInputReleased()
 
 
 /*FIRING*/
-void ATPS_Character::FireInputPressed_Implementation()
+void ATPS_Character::ServerFireInputPressed_Implementation()
 {
 	if (EquipedGun) {
+		if (bIsSprinting) {
+			StopSprinting();
+		}
 		EquipedGun->BeginFire();
 	}
 }
 
-void ATPS_Character::FireInputReleased_Implementation()
+void ATPS_Character::ServerFireInputReleased_Implementation()
 {
 	if (EquipedGun) {
 		EquipedGun->EndFire();
@@ -150,13 +155,13 @@ void ATPS_Character::MulticastPlayFiringMontage_Implementation()
 }
 
 /*AIMING*/
-void ATPS_Character::AimInputPressed_Implementation()
+void ATPS_Character::ServerAimInputPressed_Implementation()
 {
 	bWishAimState = true;
 	UpdateAimState(bWishAimState);
 }
 
-void ATPS_Character::AimInputReleased_Implementation()
+void ATPS_Character::ServerAimInputReleased_Implementation()
 {
 	bWishAimState = false;
 	UpdateAimState(bWishAimState);
@@ -165,7 +170,7 @@ void ATPS_Character::AimInputReleased_Implementation()
 void ATPS_Character::UpdateAimState(bool _newAimState)
 {
 	if (_newAimState && !bIsAiming) {
-		if (EquipedGun && EquipedGun->GetCanZoom() && !bIsReloading) {
+		if (EquipedGun && EquipedGun->GetCanZoom() && !bIsReloading && !bIsSprinting) {
 			bIsAiming = true;
 			GetWorldTimerManager().SetTimer(ZoomTimerHandle, this, &ATPS_Character::ZoomTimerEvent, 0.01f, true, 0.01f);
 			CameraBoom->CameraLagSpeed = EquipedGun->GetZoomedCameraLagSpeed();
@@ -203,9 +208,9 @@ void ATPS_Character::ZoomTimerEvent()
 
 
 /*RELOADING*/
-void ATPS_Character::ReloadInputPressed_Implementation()
+void ATPS_Character::ServerReloadInputPressed_Implementation()
 {
-	if (EquipedGun && EquipedGun->CanReload() && !bIsReloading) {
+	if (EquipedGun && EquipedGun->CanReload() && !bIsReloading && !bIsSprinting) {
 		bIsReloading = true;
 		MulticastPlayReloadMontage();
 	}
@@ -229,6 +234,34 @@ void ATPS_Character::ReloadFinished(bool _reloadSuccessful)
 }
 
 
+/*SPRINTING*/
+void ATPS_Character::ServerSprintInputPressed_Implementation()
+{
+	bIsSprinting = true;
+	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+	if (bIsReloading) {
+		GetMesh()->Stop();
+	}
+	if (bIsAiming) {
+		UpdateAimState(false);
+	}
+	if (GetCharacterMovement()->IsCrouching()) {
+		UnCrouch();
+	}
+}
+
+void ATPS_Character::ServerSprintInputReleased_Implementation()
+{
+	StopSprinting();
+}
+
+void ATPS_Character::StopSprinting()
+{
+	bIsSprinting = false;
+	GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
+	UpdateAimState(bWishAimState);
+}
+
 
 // Called to bind functionality to input
 void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -238,6 +271,9 @@ void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	//Movement Input
 	PlayerInputComponent->BindAxis("Move_X", this, &ATPS_Character::MoveForward);
 	PlayerInputComponent->BindAxis("Move_Y", this, &ATPS_Character::MoveRight);
+	//Sprint Input
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ATPS_Character::ServerSprintInputPressed);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ATPS_Character::ServerSprintInputReleased);
 	//Jump
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ATPS_Character::Jump);
 	//Camera Rotation
@@ -247,11 +283,11 @@ void ATPS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATPS_Character::CrouchInputPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ATPS_Character::CrouchInputReleased);
 	//Gun Controls
-	PlayerInputComponent->BindAction("FireWeapon", IE_Pressed, this, &ATPS_Character::FireInputPressed);
-	PlayerInputComponent->BindAction("FireWeapon", IE_Released, this, &ATPS_Character::FireInputReleased);
-	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATPS_Character::AimInputPressed);
-	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATPS_Character::AimInputReleased);
-	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATPS_Character::ReloadInputPressed);
+	PlayerInputComponent->BindAction("FireWeapon", IE_Pressed, this, &ATPS_Character::ServerFireInputPressed);
+	PlayerInputComponent->BindAction("FireWeapon", IE_Released, this, &ATPS_Character::ServerFireInputReleased);
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATPS_Character::ServerAimInputPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATPS_Character::ServerAimInputReleased);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATPS_Character::ServerReloadInputPressed);
 }
 
 FVector ATPS_Character::GetPawnViewLocation() const
@@ -283,4 +319,5 @@ void ATPS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ATPS_Character, bWishAimState);
 	DOREPLIFETIME(ATPS_Character, bIsReloading);
 	DOREPLIFETIME(ATPS_Character, EquipedGun);
+	DOREPLIFETIME(ATPS_Character, bIsSprinting);
 }

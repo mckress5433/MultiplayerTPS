@@ -28,7 +28,7 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	UPROPERTY(Category = "HealthComponent", BlueprintReadOnly, EditDefaultsOnly)
+	UPROPERTY(Category = "HealthComponent", BlueprintReadOnly, EditDefaultsOnly, Replicated)
 	float Health;
 	UPROPERTY(Category = "HealthComponent", BlueprintReadOnly, EditDefaultsOnly)
 	float MaxHealth;
@@ -39,5 +39,8 @@ protected:
 	//Adds HealthDelta to current health
 	UFUNCTION(BlueprintCallable)
 	void UpdateHealth(float _HealthDelta);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastUpdateHealth(float _HealthDelta);
 
 };
